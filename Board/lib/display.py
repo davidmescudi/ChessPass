@@ -17,10 +17,48 @@ class EinkDisplay:
         # Reset the display and send necessary initialization commands
         self.reset()
         print("Initializing e-ink display...")
+        
+        # Send the commands required to initialize the display (based on the Waveshare documentation)
+        ## Booster soft start
+        self.send_command(0x06)
+        self.send_data(0x17)  # A parameter to optimize the display
+        self.send_data(0x17)
+        self.send_data(0x17)
 
-        # Here you would send specific initialization commands to the e-ink display
-        # Example: self.send_command(some_command)
-        # Refer to your specific display's datasheet for required commands
+        ## Power settings
+        self.send_command(0x01)  # Power Setting
+        self.send_data(0x03)  # Source driving voltage
+        self.send_data(0x00)  # Gate driving voltage
+        self.send_data(0x2B)  # Source-Gate ON/OFF Period
+        self.send_data(0x2B)
+
+        ## Power on
+        self.send_command(0x04)
+        self.wait_until_idle()  # Wait until the display is ready
+
+        ## Panel setting
+        self.send_command(0x00)
+        self.send_data(0xCF)  # KW-BF for A/C, BWROTP for B/W/R three-color mode
+
+        ## VCOM and data interval setting
+        self.send_command(0x50)
+        self.send_data(0x37)
+
+        ## Resolution setting
+        self.send_command(0x61)  # Set Resolution
+        self.send_data(0x128)  # 296 pixels
+        self.send_data(0x00)
+        self.send_data(0x80)   # 128 pixels
+
+        ## VCM DC setting
+        self.send_command(0x82)  # VCOM Voltage
+        self.send_data(0x12)  # VCOM 1.2V
+
+        ## Partial display setting
+        self.send_command(0x30)  # PLL Control
+        self.send_data(0x29)
+        
+        print("E-ink display initialized successfully.")
 
     def reset(self):
         # Reset the e-ink display using the reset (RST) pin
@@ -48,6 +86,13 @@ class EinkDisplay:
     def is_busy(self):
         # Check if the e-ink display is busy
         return self.busy.value() == 1
+
+    def wait_until_idle(self):
+        # Check the busy pin and wait until the display is ready
+        print("Waiting for display to be idle...")
+        while self.is_busy():
+            time.sleep(0.1)
+        print("Display is ready.")
 
     def show_menu(self, menu_items, selected_index):
         # Show the menu on the e-ink display (this method simulates a menu display)
