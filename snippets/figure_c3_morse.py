@@ -1,79 +1,59 @@
 from machine import Pin, ADC, PWM
 from time import ticks_ms, ticks_diff
+from config import (
+    PINS_C3,
+    LED_PIN,
+    LED_OFF_DURATION,
+    MAGNET_FREQ,
+    INIT_DUTY,
+    ROT_DEBOUNCE_TIME,
+    MORSE_CODE,
+    DASH_TIME,
+    DOT_TIME,
+    SYMBOL_PAUSE_TIME,
+    LETTER_PAUSE_TIME,
+    END_MESSAGE_PAUSE_TIME,
+)
+
+VERBOSE = True
 
 # Setup pins for LED, PWM, encoder (clk, dt)
-led = Pin(10, Pin.OUT)
+led = Pin(PINS_C3["LED"], Pin.OUT)
 led.on()  # LED initially on
-pwm_pin = Pin(9)
-pwm = PWM(pwm_pin, freq=1000)  # Set frequency to 1kHz
+pwm_pin = Pin(PINS_C3["MAGNET"])
+magnet = PWM(pwm_pin, freq=1000)  # Set frequency to 1kHz
 
-clk = Pin(8, Pin.IN, Pin.PULL_UP)
-dt = Pin(20, Pin.IN, Pin.PULL_UP)
+clk = Pin(PINS_C3["CLK"], Pin.IN, Pin.PULL_UP)
+dt = Pin(PINS_C3["DT"], Pin.IN, Pin.PULL_UP)
 
 # Initial duty cycle
-duty = 1023  # (0 to 1023)
-pwm.duty(0)
-
-# Morse code dictionary
-morse_code = {
-    'A': '.-', 
-    'B': '-...',
-    'C': '-.-.',
-    'D': '-..',
-    'E': '.',
-    'F': '..-.',
-    'G': '--.',
-    'H': '....',
-    'I': '..',
-    'J': '.---',
-    'K': '-.-',
-    'L': '.-..',
-    'M': '--',
-    'N': '-.',
-    'O': '---',
-    'P': '.--.',
-    'Q': '--.-',
-    'R': '.-.',
-    'S': '...',
-    'T': '-',
-    'U': '..-',
-    'V': '...-',
-    'W': '.--',
-    'X': '-..-',
-    'Y': '-.--',
-    'Z': '--..',
-    '1': '.----',
-    '2': '..---',
-    '3': '...--',
-    '4': '....-',
-    '5': '.....',
-    '6': '-....',
-    '7': '--...',
-    '8': '---..',
-    '9': '----.',
-    '0': '-----'
-}
+duty = INIT_DUTY  # (0 to 1023)
+magnet.duty(0)
 
 # State variables for Morse code transmission
 morse_message = "HELLO"
 morse_state = {
-    'message': "",
-    'char_index': 0,
-    'symbol_index': 0,
-    'is_magnet_on' : False,
-    'last_time': ticks_ms(),
-    'is_transmitting': False,
-    'current_symbols': "",
-    'finished': False
+    "message": "",
+    "char_index": 0,
+    "symbol_index": 0,
+    "is_magnet_on": False,
+    "last_time": ticks_ms(),
+    "is_transmitting": False,
+    "current_symbols": "",
+    "finished": False,
 }
 
 # Variables for encoder state, LED control, and debouncing
 last_clk = clk.value()
 led_last_turned_off = None  # To track the last time the LED was turned off
-led_off_duration = 200  # Time to keep LED off (in milliseconds)
+led_off_duration = LED_OFF_DURATION  # Time to keep LED off (in milliseconds)
 last_encoder_event_time = 0  # For debouncing
-debounce_time = 10  # Minimum time (ms) between encoder events
+debounce_time = ROT_DEBOUNCE_TIME  # Minimum time (ms) between encoder events
 
+def log(*values):
+    if VERBOSE:
+        print(*values)
+    
 # Encoder interrupt handler
 def encoder_callback(pin):
     global duty, last_clk, led_last_turned_off, last_encoder_event_time
@@ -95,11 +75,11 @@ def encoder_callback(pin):
             duty += 50
         else:  # Counter-clockwise rotation
             duty -= 50
-            
+
         # Limit duty cycle between 0 and 1023
         duty = max(0, min(duty, 1023))
-        #pwm.duty(duty)
-        print("Duty cycle:", duty)
+        # pwm.duty(duty)
+        log("Duty cycle:", duty)
 
         # Restart Morse code transmission
         start_morse(morse_message)
@@ -108,95 +88,94 @@ def encoder_callback(pin):
     last_clk = current_clk
     last_encoder_event_time = current_time
 
+
 # Set up an interrupt on the `clk` pin for both rising and falling edges
 clk.irq(trigger=Pin.IRQ_RISING | Pin.IRQ_FALLING, handler=encoder_callback)
+
 
 # Function to start Morse code transmission
 def start_morse(message):
     global morse_state
-    morse_state['message'] = message
-    morse_state['char_index'] = 0
-    morse_state['symbol_index'] = 0
-    morse_state['is_magnet_on'] = False
-    morse_state['last_time'] = ticks_ms()
-    morse_state['is_transmitting'] = True
-    morse_state['current_symbols'] = ""
-    morse_state['finished'] = False
-    print(f"Starting Morse code: {message}")
+    morse_state["message"] = message
+    morse_state["char_index"] = 0
+    morse_state["symbol_index"] = 0
+    morse_state["is_magnet_on"] = False
+    morse_state["last_time"] = ticks_ms()
+    morse_state["is_transmitting"] = True
+    morse_state["current_symbols"] = ""
+    morse_state["finished"] = False
+    log(f"Starting Morse code: {message}")
+
 
 # Non-blocking Morse code transmission function
 def handle_morse_transmission():
     global morse_state, duty
 
-    if not morse_state['is_transmitting']:
+    if not morse_state["is_transmitting"]:
         return
-    
+
     current_time = ticks_ms()
 
-    # Time interval (dot = 200ms, dash = 600ms)
-    dot_time = 200
-    dash_time = 3*dot_time
-    symbol_pause_time = dot_time
-    letter_pause_time = 3*dot_time
-    word_pause_time = 7*dot_time
-
     # Check if it's time for the next step in Morse code transmission
-    if ticks_diff(current_time, morse_state['last_time']) >= 0:
-        if morse_state['current_symbols'] == "":
+    if ticks_diff(current_time, morse_state["last_time"]) >= 0:
+        if morse_state["current_symbols"] == "":
             # New letter to process
-            if morse_state['char_index'] < len(morse_state['message']):
-                char = morse_state['message'][morse_state['char_index']].upper()
-                if char == ' ':
+            if morse_state["char_index"] < len(morse_state["message"]):
+                char = morse_state["message"][morse_state["char_index"]].upper()
+                if char == " ":
                     # Handle space between words
-                    morse_state['last_time'] = current_time + word_pause_time
-                    morse_state['char_index'] += 1
+                    morse_state["last_time"] = current_time + END_MESSAGE_PAUSE_TIME
+                    morse_state["char_index"] += 1
                     return
-                morse_state['current_symbols'] = morse_code.get(char, "")
-                morse_state['symbol_index'] = 0
-                print(f"Sending: {char}, Symbols: {morse_state['current_symbols']}")
+                morse_state["current_symbols"] = MORSE_CODE.get(char, "")
+                morse_state["symbol_index"] = 0
+                log(f"Sending: {char}, Symbols: {morse_state['current_symbols']}")
             else:
                 # End of message, insert word pause before repeating
-                morse_state['last_time'] = current_time + word_pause_time
-                morse_state['char_index'] = 0  # Reset to repeat
-                morse_state['finished'] = True
-                print("Finished sending, word pause")
+                morse_state["last_time"] = current_time + END_MESSAGE_PAUSE_TIME
+                morse_state["char_index"] = 0  # Reset to repeat
+                morse_state["finished"] = True
+                log("Finished sending, word pause")
                 return
 
         # Turn off the signal after symbol
         if morse_state["is_magnet_on"]:
             morse_state["is_magnet_on"] = False
-            pwm.duty(0)
-            print("Turn magnet off")
+            magnet.duty(0)
+            log("Turn magnet off")
             # Turn off the signal after the complete letter
-            if morse_state['symbol_index'] >= len(morse_state['current_symbols']):
-                print(f"Current symbols '{morse_state['current_symbols']}' finished. Letter pause")
-                morse_state['last_time'] = current_time + letter_pause_time
-                morse_state['symbol_index'] = 0
-                morse_state['char_index'] += 1
-                morse_state['current_symbols'] = ""
+            if morse_state["symbol_index"] >= len(morse_state["current_symbols"]):
+                log(
+                    f"Current symbols '{morse_state['current_symbols']}' finished. Letter pause"
+                )
+                morse_state["last_time"] = current_time + LETTER_PAUSE_TIME
+                morse_state["symbol_index"] = 0
+                morse_state["char_index"] += 1
+                morse_state["current_symbols"] = ""
                 return
-            
+
             # Turn off the signal after dot or dash
-            print(f"Symbol finished. Symbol pause")
-            morse_state['last_time'] = current_time + symbol_pause_time
-            
+            log(f"Symbol finished. Symbol pause")
+            morse_state["last_time"] = current_time + SYMBOL_PAUSE_TIME
+
             return
-            
+
         # Get the current symbol (dot or dash)
-        symbol = morse_state['current_symbols'][morse_state['symbol_index']]
-        
-        if symbol in ['.', '-']:
-            print("Turn magnet on")
-            print("Send symbol:", symbol)
-            morse_state['symbol_index'] += 1
-            morse_state['is_magnet_on'] = True
-            if symbol == '.':
-                pwm.duty(duty)  # Short signal for dot
-                morse_state['last_time'] = current_time + dot_time
-            elif symbol == '-':
-                pwm.duty(duty)  # Longer signal for dash
-                morse_state['last_time'] = current_time + dash_time
+        symbol = morse_state["current_symbols"][morse_state["symbol_index"]]
+
+        if symbol in [".", "-"]:
+            log("Turn magnet on")
+            log("Send symbol:", symbol)
+            morse_state["symbol_index"] += 1
+            morse_state["is_magnet_on"] = True
+            if symbol == ".":
+                magnet.duty(duty)  # Short signal for dot
+                morse_state["last_time"] = current_time + DOT_TIME
+            elif symbol == "-":
+                magnet.duty(duty)  # Longer signal for dash
+                morse_state["last_time"] = current_time + DASH_TIME
             return
+
 
 # Function to handle LED reactivation after brief off time
 def handle_led_timeout():
@@ -208,6 +187,7 @@ def handle_led_timeout():
             led.on()  # Turn LED back on
             led_last_turned_off = None  # Reset the timeout
 
+
 # Call this in the main loop to handle the Morse code and LED asynchronously
 def main_loop():
     while True:
@@ -217,7 +197,7 @@ def main_loop():
         # Handle the LED timeout
         handle_led_timeout()
 
+
 # Example: start Morse code for "HELLO"
 start_morse(morse_message)
 main_loop()  # This will run the main loop
-
