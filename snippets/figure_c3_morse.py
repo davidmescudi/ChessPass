@@ -18,8 +18,7 @@ from config import (
 VERBOSE = True
 
 # Setup pins for LED, PWM, encoder (clk, dt)
-led = Pin(PINS_C3["LED"], Pin.OUT)
-led.on()  # LED initially on
+led = PWM(Pin(PINS_C3["LED"], Pin.OUT))
 pwm_pin = Pin(PINS_C3["MAGNET"])
 magnet = PWM(pwm_pin, freq=1000)  # Set frequency to 1kHz
 
@@ -45,10 +44,12 @@ morse_state = {
 
 # Variables for encoder state, LED control, and debouncing
 last_clk = clk.value()
-led_last_turned_off = None  # To track the last time the LED was turned off
 led_off_duration = LED_OFF_DURATION  # Time to keep LED off (in milliseconds)
 last_encoder_event_time = 0  # For debouncing
 debounce_time = ROT_DEBOUNCE_TIME  # Minimum time (ms) between encoder events
+encoder_level = 0
+encoder_max_level_time = None
+led_blink_last_time = None
 
 def log(*values):
     if VERBOSE:
@@ -56,7 +57,7 @@ def log(*values):
     
 # Encoder interrupt handler
 def encoder_callback(pin):
-    global duty, last_clk, led_last_turned_off, last_encoder_event_time
+    global duty, last_clk, last_encoder_event_time, encoder_level, encoder_max_level_time
 
     # Debouncing: ignore events that happen too quickly
     current_time = ticks_ms()
@@ -66,21 +67,19 @@ def encoder_callback(pin):
     current_clk = clk.value()
 
     if current_clk == 1 and last_clk == 0:
-        # Turn LED off briefly and track the time
-        led.off()
-        led_last_turned_off = ticks_ms()
-
         # Adjust PWM duty cycle based on encoder direction
         if dt.value() == 0:  # Clockwise rotation
             duty += 50
+            encoder_level = min (4, encoder_level + 1)
         else:  # Counter-clockwise rotation
             duty -= 50
+            encoder_level = max(0, encoder_level - 1)
 
         # Limit duty cycle between 0 and 1023
         duty = max(0, min(duty, 1023))
         # pwm.duty(duty)
         log("Duty cycle:", duty)
-
+        log("Encoder Level:", encoder_level)
         # Restart Morse code transmission
         start_morse(morse_message)
 
@@ -179,14 +178,43 @@ def handle_morse_transmission():
 
 # Function to handle LED reactivation after brief off time
 def handle_led_timeout():
-    global led_last_turned_off
+    global encoder_level, encoder_max_level_time, led_blink_last_time
+    encoder_to_led_duty_mapping = [0,255,511,1023,1023]
+    
+    current_time = ticks_ms()
 
-    if led_last_turned_off is not None:
-        # Check if it's time to turn the LED back on
-        if ticks_diff(ticks_ms(), led_last_turned_off) >= led_off_duration:
-            led.on()  # Turn LED back on
-            led_last_turned_off = None  # Reset the timeout
+    if encoder_level == 4:
+        if encoder_max_level_time is None: encoder_max_level_time = current_time
+        if led_blink_last_time is None:
+            led.duty(encoder_to_led_duty_mapping[encoder_level])
+            led_blink_last_time = current_time
+        else:
+            time_since_last_blink = ticks_diff(current_time, led_blink_last_time)
 
+            if led.duty() == 0 and time_since_last_blink >= 200:
+                led.duty(encoder_to_led_duty_mapping[encoder_level])
+                led_blink_last_time = current_time
+            elif led.duty() > 0 and time_since_last_blink >= 200:
+                led.duty(0)  # Turn the LED off
+                led_blink_last_time = current_time  # Reset the blink timer
+    else:
+        led.duty(encoder_to_led_duty_mapping[encoder_level])
+        led_blink_last_time = None
+        encoder_max_level_time = None
+
+def handle_shutdown():
+    global encoder_level, encoder_max_level_time
+
+    current_time = ticks_ms()
+    if encoder_level == 4 and encoder_max_level_time is None:
+        encoder_max_level_time = current_time
+        log("Current time set", encoder_max_level_time)
+    elif encoder_level == 4 and ticks_diff(current_time, encoder_max_level_time) >= 10000:
+        log("Entering deep sleep")
+        # TODO: deactivate all components e.g. led.deinit()
+        encoder_max_level_time = None
+    elif encoder_level < 4:
+        encoder_max_level_time = None
 
 # Call this in the main loop to handle the Morse code and LED asynchronously
 def main_loop():
@@ -196,7 +224,7 @@ def main_loop():
 
         # Handle the LED timeout
         handle_led_timeout()
-
+        handle_shutdown()
 
 # Example: start Morse code for "HELLO"
 start_morse(morse_message)
