@@ -20,7 +20,7 @@ class HallSensor:
         self.verbose = verbose
         self.baseline = 0 # sample before use!!
         self.initialised_time = None
-        self.detected_history = []
+        self.detected_history_avg = 0
     
     def log(self, *values):
         if self.verbose: print(*values)
@@ -41,9 +41,10 @@ class HallSensor:
         self.log(f"Sensor initialized with baseline: {self.baseline}")
     
     def is_magnet_active_detected(self):
-        true_detected = sum(self.detected_history)
+        #true_detected = sum(self.detected_history)
 
-        return (true_detected / len(self.detected_history)) >= self.figure_detection_threshold
+        return self.detected_history_avg#(true_detected / len(self.detected_history)) #>= self.figure_detection_threshold
+        
 
     def is_magnet_detected(self):
         current_reading = self.hall.read()
@@ -51,14 +52,15 @@ class HallSensor:
 
         # Return True if deviation exceeds the threshold (magnet detected)
         isDetected = deviation > self.hall_variance_threshold
-        current_time = ticks_ms()
+        #current_time = ticks_ms()
 
         if self.initialised_time:
-            if ticks_diff(current_time, self.initialised_time) >= self.figure_detection_time:
-                self.detected_history.append(isDetected)
-                self.detected_history.pop(0)
-            else:
-                self.detected_history.append(isDetected)
+            self.detected_history_avg = (self.detected_history_avg + int(isDetected)) / 2
+            #if ticks_diff(current_time, self.initialised_time) >= self.figure_detection_time:
+                # self.detected_history.append(isDetected)
+                # self.detected_history.pop(0)
+            # else:
+            #     self.detected_history.append(isDetected)
 
         # Return True if deviation exceeds the threshold (magnet detected)
         return isDetected
