@@ -170,7 +170,9 @@ class DISPLAY:
 
 class DISPLAY_FRAMEBUF(DISPLAY):
 	def __init__(self, spi, cs, dc, bl, rst=None):
-		super().__init__(SPI(spi).init(baudrate=2000000, polarity=0, phase=0) , Pin(cs), Pin(dc), Pin(rst), Pin(bl, Pin.OUT, value=0))
+		initialised_spi = SPI(spi)
+		initialised_spi.init(baudrate=2000000, polarity=0, phase=0)
+		super().__init__(initialised_spi, Pin(cs), Pin(dc), Pin(rst), Pin(bl, Pin.OUT, value=0))
 		self.buf = bytearray((HEIGHT // 8) * WIDTH)
 		self.fbuf = framebuf.FrameBuffer(self.buf, WIDTH, HEIGHT, framebuf.MONO_HLSB)
 
