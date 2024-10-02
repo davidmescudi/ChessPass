@@ -1,7 +1,6 @@
 from .. import util
-import base64
 import binascii
-from secrets import token_bytes
+import os
 
 class Polynomial:
     def __init__(self, prime_mod, coefficients):
@@ -113,23 +112,6 @@ def recover_secret(data):
         points.append((x, util.int_from_bytes(y)))
     return util.int_to_bytes(lagrange_interpolation(0, points, prime_mod))[1:]
 
-def to_base64(data):
-    encode_share = lambda xy: str(xy[0]) + "-" + base64.b64encode(xy[1]).decode('ascii')
-    return {
-        'required_shares': data['required_shares'],
-        'prime_mod': base64.b64encode(data['prime_mod']).decode('ascii'),
-        'shares': list(map(encode_share, data['shares']))
-    }
-
-def from_base64(data):
-    decode_tuple = lambda xy: (int(xy[0]), base64.b64decode(xy[1]))
-    decode_share = lambda s: decode_tuple(tuple(s.split("-")))
-    return {
-        'required_shares': data['required_shares'],
-        'prime_mod': data['prime_mod'] if isinstance(data['prime_mod'], int) else base64.b64decode(data['prime_mod']),
-        'shares': list(map(decode_share, data['shares']))
-    }
-
 def to_hex(data):
     encode_share = lambda xy: str(xy[0]) + "-" + binascii.hexlify(xy[1]).decode('ascii')
     return {
@@ -146,3 +128,7 @@ def from_hex(data):
         'prime_mod': data['prime_mod'] if isinstance(data['prime_mod'], int) else binascii.unhexlify(data['prime_mod']),
         'shares': list(map(decode_share, data['shares']))
     }
+
+def token_bytes(n):
+    return os.urandom(n)
+
