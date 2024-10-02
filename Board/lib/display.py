@@ -206,7 +206,8 @@ class DISPLAY_FRAMEBUF(DISPLAY):
 	
 	def showLogo(self):
 		self.fbuf.fill(0)
-		self.blit(CHESS_PASS_LOGO, 0, 0, 0)
+		logo_buf = framebuf.FrameBuffer(CHESS_PASS_LOGO, WIDTH, HEIGHT, framebuf.MONO_VLSB)
+		self.blit(logo_buf, 0, 0, 0)
 		self.clear()
 		self.data(self.buf)
 
