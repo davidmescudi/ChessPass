@@ -1,5 +1,4 @@
 from .. import util
-import warnings
 import base64
 import binascii
 from secrets import token_bytes
@@ -95,7 +94,7 @@ def recover_secret(data):
             raise ValueError("not enough shares have been provided")
         shares = shares[0:required_shares]
     else:
-        warnings.warn("The number of required shares has not been specified. If not enough shares are provided, an incorrect secret will be produced without detection.")
+        print("The number of required shares has not been specified. If not enough shares are provided, an incorrect secret will be produced without detection.")
     prime_mod = data.get('prime_mod')
     if prime_mod is None:
         raise ValueError("prime mod must be provided")
