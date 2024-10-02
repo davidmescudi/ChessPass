@@ -1,3 +1,5 @@
 pymakr.conf
 .venv
 __pycache__
+boot.py
+boot*.py
