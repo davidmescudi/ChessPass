@@ -18,38 +18,40 @@ PINS_S3 = {
     "DT": 44
 }
 
+SHUTDOWN_TIME = 10000
+ENCODER_MAX_LEVEL = 4
+ENCODER_MIN_LEVEL = 0
+ENCODER_LEVEL = 0
 MAGNET_FREQ = 1000 # 1 kHz
-INIT_DUTY = 1023
+INIT_DUTY = 0
+MAGNET_DUTY_MAPPING = [0, 900, 1000, 1023, 0]
 
-LED_PIN = 10
-LED_OFF_DURATION = 200 # miliseconds off when magnet strenght switchted
+LED_DUTY_MAPPING = [0,255,511,1023,1023]
+LED_BLINK_INTERVAL = 200 # miliseconds off when magnet strenght switchted
 ### TODO Use pwm for led to set 3 states depending on 3 magnet strenght LOW -> MIDDLE -> HIGH
 
-ROT_DEBOUNCE_TIME = 10  # Minimum time (ms) between encoder events
+ROT_DEBOUNCE_TIME = 20  # Minimum time (ms) between encoder events
+
 
 #BOTH
 MORSE_CODE = {
-    'A': '.-', 
-    'B': '-...',
-    'C': '-.-.',
-    'D': '-..',
-    'E': '.',
-    'F': '..-.',
-    'G': '--.',
-    'H': '....',
-    'L': '.-..',
-    'O': '---',
-    '-': '-',
-    '1': '.----',
-    '2': '..---',
-    '3': '...--',
-    '4': '....-',
-    '5': '.....',
-    '6': '-....',
-    '7': '--...',
-    '8': '---..',
-    '9': '----.',
-    '0': '-----'
+    'a': '.', 
+    'b': '..',
+    'c': '...',
+    'd': '-',
+    'e': '....',
+    'f': '-.',
+    '-': '-..',
+    '1': '..--',
+    '2': '.-.-',
+    '3': '-..-',
+    '4': '-.-.',
+    '5': '--..',
+    '6': '--...',
+    '7': '-..-.',
+    '8': '--..-',
+    '9': '---',
+    '0': '--'
 }
 
 DOT_TIME = 70
@@ -58,3 +60,13 @@ SYMBOL_PAUSE_TIME = DOT_TIME
 LETTER_PAUSE_TIME = 3 * DOT_TIME
 END_MESSAGE_PAUSE_TIME = 7 * DOT_TIME
 
+FIGURE_DETECTION_TIME = 1000
+FIGURE_DETECTION_THRESHOLD = 0.3
+
+DISPLAY_PINS = {
+    "SPI": 1,
+    "CS": 15,
+    "DC": 16,
+    "RST": 4,
+    "BL": 17
+}

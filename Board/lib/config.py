@@ -18,14 +18,20 @@ PINS_S3 = {
     "DT": 44
 }
 
+SHUTDOWN_TIME = 10000
+ENCODER_MAX_LEVEL = 4
+ENCODER_MIN_LEVEL = 0
+ENCODER_LEVEL = 0
 MAGNET_FREQ = 1000 # 1 kHz
-INIT_DUTY = 1023
+INIT_DUTY = 0
+MAGNET_DUTY_MAPPING = [0, 900, 980, 1023, 0]
 
-LED_PIN = 10
-LED_OFF_DURATION = 200 # miliseconds off when magnet strenght switchted
+LED_DUTY_MAPPING = [0,255,511,1023,1023]
+LED_BLINK_INTERVAL = 200 # miliseconds off when magnet strenght switchted
 ### TODO Use pwm for led to set 3 states depending on 3 magnet strenght LOW -> MIDDLE -> HIGH
 
-ROT_DEBOUNCE_TIME = 10  # Minimum time (ms) between encoder events
+ROT_DEBOUNCE_TIME = 20  # Minimum time (ms) between encoder events
+
 
 #BOTH
 MORSE_CODE = {
