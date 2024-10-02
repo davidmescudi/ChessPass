@@ -5,6 +5,8 @@ from lib.buttons import Button
 from lib.sensors import HallSensor
 from lib.menu import Menu
 import time
+# https://github.com/jqueiroz/python-sslib
+from lib.sslib import shamir
 
 # Callback functions for button press
 def on_up_button():
