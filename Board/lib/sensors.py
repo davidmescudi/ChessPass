@@ -5,7 +5,6 @@ class HallSensor:
         self,
         pin_num=36,
         hall_variance_threshold = 70,
-        morse_variance = 5,
         verbose = False
     ):
         self.hall = ADC(Pin(pin_num))
@@ -13,9 +12,8 @@ class HallSensor:
             ADC.ATTN_11DB
         )  # Set the attenuation for the ADC pin to read the full 0-3.3V range
         self.hall_variance_threshold = hall_variance_threshold
-        self.morse_variance = morse_variance
-        self.verbose = False
-        self.baseline = self.init_hall_sensor() # average sample
+        self.verbose = verbose
+        self.baseline = 0 # sample before use!!
     
     def log(self, *values):
         if self.verbose: print(*values)

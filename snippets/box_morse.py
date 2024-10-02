@@ -8,6 +8,7 @@ from config import (
     DOT_TIME,
     LETTER_PAUSE_TIME,
     END_MESSAGE_PAUSE_TIME,
+    ADCS
 )
 
 VERBOSE = True
@@ -17,6 +18,7 @@ def log(*values):
         print(*values)
 
 # Set up the Hall sensor on an ADC pin
+hall_sensors = [ADC(Pin(adc)) for adc in ADCS]
 hall_sensor = ADC(Pin(27))  # Adjust the pin based on your setup
 hall_sensor.atten(ADC.ATTN_11DB)
 

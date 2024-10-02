@@ -36,7 +36,7 @@ duty = INIT_DUTY  # (0 to 1023)
 magnet.duty(0)
 
 # State variables for Morse code transmission
-morse_message = "HELLO"
+morse_message = "1-ade023dadbcf2f11364e809abe9c9f21be24a0362ea775de"
 morse_state = {
     "message": "",
     "char_index": 0,
