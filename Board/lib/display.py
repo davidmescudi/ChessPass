@@ -172,9 +172,9 @@ class DISPLAY_FRAMEBUF(DISPLAY):
 	def __init__(self, spi, cs, dc, bl, rst=None):
 		initialised_spi = SPI(spi)
 		initialised_spi.init(baudrate=2000000, polarity=0, phase=0)
-		super().__init__(initialised_spi, Pin(cs), Pin(dc), Pin(rst), Pin(bl, Pin.OUT, value=0))
+		super().__init__(initialised_spi, Pin(cs), Pin(dc), Pin(bl, Pin.OUT, value=0), Pin(rst))
 		self.buf = bytearray((HEIGHT // 8) * WIDTH)
-		self.fbuf = framebuf.FrameBuffer(self.buf, WIDTH, HEIGHT, framebuf.MONO_HLSB)
+		self.fbuf = framebuf.FrameBuffer(self.buf, WIDTH, HEIGHT, framebuf.MONO_VLSB)
 
 	def fill(self, col):
 		self.fbuf.fill(col)
@@ -206,7 +206,7 @@ class DISPLAY_FRAMEBUF(DISPLAY):
 	
 	def showLogo(self):
 		self.fbuf.fill(0)
-		logo_buf = framebuf.FrameBuffer(CHESS_PASS_LOGO, WIDTH, HEIGHT, framebuf.MONO_VLSB)
+		logo_buf = framebuf.FrameBuffer(CHESS_PASS_LOGO, WIDTH, HEIGHT, framebuf.MONO_HLSB)
 		self.blit(logo_buf, 0, 0, 0)
 		self.clear()
 		self.data(self.buf)
@@ -215,8 +215,8 @@ class DISPLAY_FRAMEBUF(DISPLAY):
 		self.fbuf.fill(0)
 		self.text("Test", 20, 20, 0)
 
-	def blit(self, bytearray, position_x, position_y, rotation = 0):
-		self.fbuf.blit(bytearray, position_x, position_y, rotation)
+	def blit(self, fbuf, position_x, position_y, rotation = 0):
+		self.fbuf.blit(fbuf, position_x, position_y, rotation)
 
 	def show(self):
 		self.data(self.buf)
