@@ -24,6 +24,8 @@ from config import (
     ENCODER_MAX_LEVEL,
     ENCODER_MIN_LEVEL,
     SHUTDOWN_TIME,
+    MAGNET_MAX_DUTY,
+    TRANSMIT_MAGNET_STRENGTH_TIME
 )
 
 VERBOSE = True
@@ -172,8 +174,16 @@ def handle_morse_transmission():
 
     if not morse_state["is_transmitting"]:
         return
-
+    
+        
     current_time = ticks_ms()
+    
+    if morse_state["finished"]:
+        # add time to transmit magnet strenght
+        morse_state["finished"] = False
+        morse_state["last_time"] = current_time + TRANSMIT_MAGNET_STRENGTH_TIME
+        magnet.duty(magnet_duty)
+        # TODO pause after magnet_strenght transmission
 
     # Check if it's time for the next step in Morse code transmission
     if ticks_diff(current_time, morse_state["last_time"]) >= 0:
@@ -181,11 +191,7 @@ def handle_morse_transmission():
             # New letter to process
             if morse_state["char_index"] < len(morse_state["message"]):
                 char = morse_state["message"][morse_state["char_index"]]
-                if char == " ":
-                    # Handle space between words
-                    morse_state["last_time"] = current_time + END_MESSAGE_PAUSE_TIME
-                    morse_state["char_index"] += 1
-                    return
+    
                 morse_state["current_symbols"] = MORSE_CODE.get(char, "")
                 morse_state["symbol_index"] = 0
                 log(f"Sending: {char}, Symbols: {morse_state['current_symbols']}")
@@ -228,10 +234,10 @@ def handle_morse_transmission():
             morse_state["symbol_index"] += 1
             morse_state["is_magnet_on"] = True
             if symbol == ".":
-                magnet.duty(magnet_duty)  # Short signal for dot
+                magnet.duty(MAGNET_MAX_DUTY)  # Short signal for dot
                 morse_state["last_time"] = current_time + DOT_TIME
             elif symbol == "-":
-                magnet.duty(magnet_duty)  # Longer signal for dash
+                magnet.duty(MAGNET_MAX_DUTY)  # Longer signal for dash
                 morse_state["last_time"] = current_time + DASH_TIME
             return
 
