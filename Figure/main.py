@@ -216,9 +216,14 @@ def handle_shutdown():
         encoder_max_level_time = current_time
         log("Current time set", encoder_max_level_time)
     elif encoder_level == 4 and ticks_diff(current_time, encoder_max_level_time) >= 10000:
-        log("Entering deep sleep")
-        # TODO: deactivate all components e.g. led.deinit()
-        encoder_max_level_time = None
+        log("Disabling all components")
+        # TODO: Test if figure still works after deinit process
+        led.deinit()
+        magnet.duty(0)
+        magnet.deinit()
+        pwm_pin.deinit()
+        clk.deinit()
+        dt.deinit()
     elif encoder_level < 4:
         encoder_max_level_time = None
 
