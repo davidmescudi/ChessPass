@@ -1,7 +1,13 @@
-from machine import Pin, ADC, PWM
+from machine import Pin, ADC, PWM, freq
 from time import ticks_ms, ticks_diff
+
+# Load right pins because we used two different esp32 namley s3 (240 MHz) and c3(160 MHz) that differ in pins
+if freq() == 240000000:
+    from config import PINS_S3 as PINS
+else:
+    from config import PINS_C3 as PINS
+
 from config import (
-    PINS_C3,
     LED_PIN,
     LED_OFF_DURATION,
     MAGNET_FREQ,
@@ -18,12 +24,12 @@ from config import (
 VERBOSE = True
 
 # Setup pins for LED, PWM, encoder (clk, dt)
-led = PWM(Pin(PINS_C3["LED"], Pin.OUT))
-pwm_pin = Pin(PINS_C3["MAGNET"])
+led = PWM(Pin(PINS["LED"], Pin.OUT))
+pwm_pin = Pin(PINS["MAGNET"])
 magnet = PWM(pwm_pin, freq=1000)  # Set frequency to 1kHz
 
-clk = Pin(PINS_C3["CLK"], Pin.IN, Pin.PULL_UP)
-dt = Pin(PINS_C3["DT"], Pin.IN, Pin.PULL_UP)
+clk = Pin(PINS["CLK"], Pin.IN, Pin.PULL_UP)
+dt = Pin(PINS["DT"], Pin.IN, Pin.PULL_UP)
 
 # Initial duty cycle
 duty = INIT_DUTY  # (0 to 1023)
