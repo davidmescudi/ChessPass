@@ -1,5 +1,8 @@
 from lib import HallSensor, MorseReceiver
+from lib import DISPLAY, DISPLAY_FRAMEBUF
+from lib.sslib import shamir
 from lib.config import (
+    DISPLAY_PINS,
     HALL_VARIANCE_THRESHOLD,
     MORSE_VARIANCE,
     ADCS,
@@ -42,7 +45,11 @@ def main_loop():
 
     for morse_receiver in morse_receivers:
         morse_receiver.init()
-        
+    
+    ######## Display
+    display = DISPLAY_FRAMEBUF(DISPLAY_PINS['SPI'], DISPLAY_PINS['CS'], DISPLAY_PINS['DC'], DISPLAY_PINS['BL'] , DISPLAY_PINS['RST'])
+    display.showLogo()
+    
     messages = []
     while True:
         for morse_receiver in morse_receivers:
