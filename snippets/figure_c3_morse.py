@@ -36,7 +36,7 @@ duty = INIT_DUTY  # (0 to 1023)
 magnet.duty(0)
 
 # State variables for Morse code transmission
-morse_message = "HELLO"
+morse_message = "1-ade023dadbcf2f11364e809abe9c9f21be24a0362ea775de"
 morse_state = {
     "message": "",
     "char_index": 0,
@@ -216,14 +216,9 @@ def handle_shutdown():
         encoder_max_level_time = current_time
         log("Current time set", encoder_max_level_time)
     elif encoder_level == 4 and ticks_diff(current_time, encoder_max_level_time) >= 10000:
-        log("Disabling all components")
-        # TODO: Test if figure still works after deinit process
-        led.deinit()
-        magnet.duty(0)
-        magnet.deinit()
-        pwm_pin.deinit()
-        clk.deinit()
-        dt.deinit()
+        log("Entering deep sleep")
+        # TODO: deactivate all components e.g. led.deinit()
+        encoder_max_level_time = None
     elif encoder_level < 4:
         encoder_max_level_time = None
 
