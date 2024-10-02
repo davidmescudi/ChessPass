@@ -9,11 +9,12 @@ from lib.config import (
     SYMBOL_PAUSE_TIME,
     LETTER_PAUSE_TIME,
     END_MESSAGE_PAUSE_TIME,
+    FIGURE_DETECTION_TIME,
+    FIGURE_DETECTION_THRESHOLD
 )
 
 
 def main_loop():
-
     hall_sensors = []
     morse_receivers = []
     for pin_num in ADCS:
@@ -21,6 +22,8 @@ def main_loop():
             pin_num,
             hall_variance_threshold=HALL_VARIANCE_THRESHOLD,
             verbose=True,
+            figure_detection_time=FIGURE_DETECTION_TIME,
+            figure_detection_threshold=FIGURE_DETECTION_THRESHOLD
         )
         hall_sensors.append(hall_sensor)
         morse_receivers.append(
