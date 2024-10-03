@@ -1,6 +1,7 @@
 from lib import HallSensor, MorseReceiver
 from lib import DISPLAY, DISPLAY_FRAMEBUF
 from lib.sslib import shamir
+from boot import required_shares, prime_mod
 from lib.config import (
     DISPLAY_PINS,
     HALL_VARIANCE_THRESHOLD,
@@ -15,7 +16,16 @@ from lib.config import (
     FIGURE_DETECTION_TIME,
     FIGURE_DETECTION_THRESHOLD
 )
+display = DISPLAY_FRAMEBUF(DISPLAY_PINS['SPI'], DISPLAY_PINS['CS'], DISPLAY_PINS['DC'], DISPLAY_PINS['BL'] , DISPLAY_PINS['RST'])
 
+def handle_display(activeFigures, messages):
+    if not len(messages) < required_shares:
+        if activeFigures > 0:
+            display.showActiveFigures(activeFigures, required_shares)
+        else:
+            display.showLogo()
+    else:
+        display.showSecret()
 
 def main_loop():
     hall_sensors = []
@@ -46,18 +56,18 @@ def main_loop():
     for morse_receiver in morse_receivers:
         morse_receiver.init()
     
-    ######## Display
-    display = DISPLAY_FRAMEBUF(DISPLAY_PINS['SPI'], DISPLAY_PINS['CS'], DISPLAY_PINS['DC'], DISPLAY_PINS['BL'] , DISPLAY_PINS['RST'])
-    display.showLogo()
     
     messages = []
     while True:
+        active_figures = 0
         for morse_receiver in morse_receivers:
+            active_figures += morse_receiver.hall_sensor.is_magnet_active_detected()
             message = morse_receiver.execute()
             if message:
                 message = message.lower()
                 messages.append(message)
                 print(messages)
+        handle_display(active_figures, messages)
 
 
 main_loop()

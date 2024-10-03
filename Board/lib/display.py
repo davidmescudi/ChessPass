@@ -219,9 +219,14 @@ class DISPLAY_FRAMEBUF(DISPLAY):
         self.clear()
         self.data(self.buf)
 
-    def showActiveFigures(self):
+    def showActiveFigures(self, activeFigures, required_shares):
         self.fbuf.fill(0)
-        self.text("Test", 20, 20, 1)
+        self.text(f"{activeFigures} / {required_shares}", 20, 20, 1)
+        self.show()
+
+    def showSecret(self, secret):
+        self.fbuf.fill(0)
+        self.text(secret, 20, 20, 1)
         self.show()
 
     def blit(self, fbuf, position_x, position_y, rotation=0):
