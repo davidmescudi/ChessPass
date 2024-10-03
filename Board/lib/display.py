@@ -224,6 +224,11 @@ class DISPLAY_FRAMEBUF(DISPLAY):
         self.text(f"{activeFigures} / {required_shares}", 20, 20, 1)
         self.show()
 
+    def showText(self, message):
+        self.fbuf.fill(0)
+        self.text(message, 0, 20, 1)
+        self.show()
+
     def showSecret(self, secret):
         self.fbuf.fill(0)
         self.text(secret, 20, 20, 1)

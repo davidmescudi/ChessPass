@@ -19,6 +19,7 @@ class HallSensor:
         self.figure_detection_threshold = figure_detection_threshold
         self.verbose = verbose
         self.baseline = 0 # sample before use!!
+        self.manget_strenght = 0
         self.initialised_time = None
         self.detected_history_avg = 0
     
@@ -30,14 +31,14 @@ class HallSensor:
 
     def init_hall_sensor(self, samples=1000):
         
-        readings = []
+        readings_avg = self.hall.read()
 
         for _ in range(samples):
-            readings.append(self.hall.read())
+            readings_avg = (readings_avg + self.hall.read()) // 2
 
         self.initialised_time = ticks_ms()
         # Calculate the average baseline
-        self.baseline = sum(readings) // len(readings)
+        self.baseline = readings_avg
         self.log(f"Sensor initialized with baseline: {self.baseline}")
     
     def is_magnet_active_detected(self):
@@ -45,6 +46,21 @@ class HallSensor:
 
         return self.detected_history_avg#(true_detected / len(self.detected_history)) #>= self.figure_detection_threshold
         
+    def average_magnet_strength(self, hall_value):
+        if self.manget_strenght == 0:
+            self.manget_strenght = hall_value
+            return
+        
+        self.manget_strenght = (self.manget_strenght + hall_value) // 2
+        
+    def measure_magnet_strenght(self):
+        current_reading = self.read_value()
+        if self.manget_strenght == 0:
+            self.manget_strenght = current_reading
+            return
+        #print("magnet_strenght:", self.manget_strenght)
+        #print("current reading",current_reading)
+        self.manget_strenght = (self.manget_strenght + current_reading) // 2
 
     def is_magnet_detected(self):
         current_reading = self.hall.read()
