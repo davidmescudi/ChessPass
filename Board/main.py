@@ -47,6 +47,7 @@ display = DISPLAY_FRAMEBUF(
     DISPLAY_PINS["BL"],
     DISPLAY_PINS["RST"],
 )
+
 is_secret_shown = False
 is_receiving_piece_config_mode = True
 counter = 0
@@ -90,6 +91,7 @@ def handle_secret_display(messages):
         return
     result = shamir.recover_secret(shamir.from_hex(decrypt_secret(shifted_messages))).decode('ascii')
     display.showSecret(result)
+    is_secret_shown = True
 
 def main_loop():
     global is_receiving_piece_config_mode, last_pressed_time, debounce_time, enough_messages
