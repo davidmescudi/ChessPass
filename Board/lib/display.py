@@ -253,7 +253,7 @@ class DISPLAY_FRAMEBUF(DISPLAY):
     
     def showSecret(self, secret):
         self.fbuf.fill(0)
-        #self.text(secret, 20, 20, 1)
+        self.text(secret, 20, 20, 1)
         self.show()
 
     def blit(self, fbuf, position_x, position_y, rotation=0):
