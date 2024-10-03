@@ -1,7 +1,6 @@
-from lib import HallSensor, MorseReceiver
-from lib import DISPLAY, DISPLAY_FRAMEBUF
-from lib.sslib import shamir
-from boot import required_shares, prime_mod
+from machine import Pin, Timer
+from time import ticks_ms
+from lib import HallSensor, MorseReceiver, DISPLAY_FRAMEBUF, Button
 from lib.config import (
     DISPLAY_PINS,
     HALL_VARIANCE_THRESHOLD,
@@ -14,7 +13,7 @@ from lib.config import (
     LETTER_PAUSE_TIME,
     END_MESSAGE_PAUSE_TIME,
     FIGURE_DETECTION_TIME,
-    FIGURE_DETECTION_THRESHOLD
+    FIGURE_DETECTION_THRESHOLD,
 )
 
 def shift_hex_string(s, shift, decrypt=False):
@@ -35,7 +34,29 @@ def shift_hex_string(s, shift, decrypt=False):
             # Leave any other characters unchanged
             shifted += char
     return shifted
+
 display = DISPLAY_FRAMEBUF(DISPLAY_PINS['SPI'], DISPLAY_PINS['CS'], DISPLAY_PINS['DC'], DISPLAY_PINS['BL'] , DISPLAY_PINS['RST'])
+# Global variables
+required_shares = 2
+display = DISPLAY_FRAMEBUF(DISPLAY_PINS['SPI'], DISPLAY_PINS['CS'], DISPLAY_PINS['DC'], DISPLAY_PINS['BL'], DISPLAY_PINS['RST'])
+is_secret_shown = False
+is_receiving_piece_config_mode = True
+right_btn = Pin(3, Pin.IN, Pin.PULL_UP)
+
+def left_button():
+    print("Left Button pressed")
+    display.showText("Left Button")
+
+def right_button():
+    print("Right Button pressedt")
+    display.showText("Right Button")
+
+left_btn = Button(pin_num=1, callback=left_button)
+right_btn = Button(pin_num=3, callback=right_button)
+
+# Display initial state
+display.showText("Receive Morse")
+
 
 def handle_display(activeFigures, messages):
     if not len(messages) < required_shares:
@@ -47,12 +68,20 @@ def handle_display(activeFigures, messages):
         shifted_messages = []
         for message in messages:
             # TODO: aus messages position und magnetstärke erhalten
-            shifted_messages.append(shift_hex_string(message, message.position * message.strength, decrypt=True))
+            shifted_messages.append(shift_hex_string(message, 1, decrypt=True))
+        if is_secret_shown:
+            return
         display.showSecret(shifted_messages)
+        
+def get_magnet_configs(hall_sensor):
+    pass
 
 def main_loop():
+    global is_receiving_piece_config_mode, switch_mode_flag
     hall_sensors = []
     morse_receivers = []
+    
+    # Initialize hall sensors and Morse receivers
     for pin_num in ADCS:
         hall_sensor = HallSensor(
             pin_num,
@@ -76,21 +105,29 @@ def main_loop():
             )
         )
 
+    # Initialize Morse receivers
     for morse_receiver in morse_receivers:
         morse_receiver.init()
     
-    
-    messages = []
+    messages = set()
+
     while True:
         active_figures = 0
-        for morse_receiver in morse_receivers:
-            active_figures += morse_receiver.hall_sensor.is_magnet_active_detected()
-            message = morse_receiver.execute()
-            if message:
-                message = message.lower()
-                messages.append(message)
-                print(messages)
-        handle_display(active_figures, messages)
+        
 
+        if is_receiving_piece_config_mode:
+            pass
+        else:
+            # Process each morse receiver
+            for index, morse_receiver in enumerate(morse_receivers):
+                message = morse_receiver.execute()
+                if message:
+                    message = message.lower()
+                    messages.add((index, message))
+                    print(messages)  # Debugging output
+            
+            # Update the display
+            handle_display(active_figures, messages)
 
+# Uncomment to run the main loop
 main_loop()
