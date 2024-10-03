@@ -1,6 +1,6 @@
 from machine import Pin, ADC, PWM, freq
 from time import ticks_ms, ticks_diff, sleep_ms
-
+from boot import secret_share
 # Load right pins because we used two different esp32 namley s3 (240 MHz) and c3(160 MHz) that differ in pins
 if freq() == 240000000:
     from config import PINS_S3 as PINS
@@ -27,7 +27,6 @@ from config import (
     MAGNET_MAX_DUTY,
     TRANSMIT_MAGNET_STRENGTH_TIME
 )
-
 VERBOSE = True
 
 # Setup pins for LED, PWM, encoder (clk, dt)
@@ -43,7 +42,6 @@ magnet_duty = INIT_DUTY  # (0 to 1023) magnet strenght for morsing
 
 
 # State variables for Morse code transmission
-morse_message = "1-ade023dadbcf2f11364e809abe9c9f21be24a0362ea775de"
 morse_state = {
     "message": "",
     "char_index": 0,
@@ -89,15 +87,16 @@ def encoder_callback(pin):
             encoder_level = min(ENCODER_MAX_LEVEL, encoder_level + 1)
         else:  # Counter-clockwise rotation
             encoder_level = max(ENCODER_MIN_LEVEL, encoder_level - 1)
-
+            
         # Limit duty cycle between 0 and 1023
-        magnet_duty = MAGNET_DUTY_MAPPING[encoder_level]
+        magnet_duty = MAGNET_DUTY_MAPPING[encoder_level]#
+        magnet.duty(magnet_duty)
         # pwm.duty(duty)
         log("Duty cycle:", magnet_duty)
         log("Encoder Level:", encoder_level)
         # Restart Morse code transmission
-        start_morse(morse_message)
-
+        if (encoder_level < 4 and morse_state["is_transmitting"]):
+            morse_state["is_transmitting"] = False
     # Update the last state and time
     last_clk = current_clk
     last_encoder_event_time = current_time
@@ -140,24 +139,26 @@ def handle_shutdown():
 
     current_time = ticks_ms()
     if encoder_level == ENCODER_MAX_LEVEL:
+        if not morse_state["is_transmitting"]:
+            start_morse()
         if encoder_max_level_time is None:
             encoder_max_level_time = current_time
             log("Current time set", encoder_max_level_time)
-        elif ticks_diff(current_time, encoder_max_level_time) >= SHUTDOWN_TIME:
-            log("Disabling all components! Shutdown...")
-            is_shutdown = True
-            led.duty(0)
-            magnet.duty(0)
-            clk.off()
-            dt.off()
+        #elif ticks_diff(current_time, encoder_max_level_time) >= SHUTDOWN_TIME:
+            #log("Shutdown")
+            #is_shutdown = True
+            #led.duty(0)
+            #magnet.duty(0)
+            #clk.off()
+            #dt.off()
     else:
         encoder_max_level_time = None
 
 
 # Function to start Morse code transmission
-def start_morse(message):
+def start_morse():
     global morse_state
-    morse_state["message"] = message
+    morse_state["message"] = secret_share
     morse_state["char_index"] = 0
     morse_state["symbol_index"] = 0
     morse_state["is_magnet_on"] = False
@@ -165,7 +166,7 @@ def start_morse(message):
     morse_state["is_transmitting"] = True
     morse_state["current_symbols"] = ""
     morse_state["finished"] = False
-    log(f"Starting Morse code: {message}")
+    log(f"Starting Morse code: {secret_share}")
 
 
 # Non-blocking Morse code transmission function
@@ -259,5 +260,4 @@ def main_loop():
 
 
 # Example: start Morse code for "HELLO"
-start_morse(morse_message)
 main_loop()  # This will run the main loop

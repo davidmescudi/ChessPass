@@ -36,7 +36,7 @@ def shift_hex_string(s, shift, decrypt=False):
             shifted += char
     return shifted
 
-result = shamir.to_hex(shamir.split_secret(secret.encode('ascii'), how_many_figures_required_to_reveal_secret, how_many_figures, prime_mod=2**607-1))
+result = shamir.to_hex(shamir.split_secret(secret.encode('ascii'), how_many_figures_required_to_reveal_secret, how_many_figures))
 
 required_shares = result['required_shares']
 prime_mod = result['prime_mod']
