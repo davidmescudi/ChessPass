@@ -19,7 +19,7 @@ class HallSensor:
         self.figure_detection_threshold = figure_detection_threshold
         self.verbose = verbose
         self.baseline = 0 # sample before use!!
-        self.manget_strenght = 0
+        self.manget_strength = 0
         self.initialised_time = None
         self.detected_history_avg = 0
     
@@ -47,20 +47,23 @@ class HallSensor:
         return self.detected_history_avg#(true_detected / len(self.detected_history)) #>= self.figure_detection_threshold
         
     def average_magnet_strength(self, hall_value):
-        if self.manget_strenght == 0:
-            self.manget_strenght = hall_value
+        if self.manget_strength == 0:
+            self.manget_strength = hall_value
             return
         
-        self.manget_strenght = (self.manget_strenght + hall_value) // 2
-        
-    def measure_magnet_strenght(self):
+        self.manget_strength = (self.manget_strength + hall_value) // 2
+    
+    def reset_magnet_strength(self):
+        self.manget_strength = 0
+    
+    def measure_magnet_strength(self):
         current_reading = self.read_value()
-        if self.manget_strenght == 0:
-            self.manget_strenght = current_reading
+        if self.manget_strength == 0:
+            self.manget_strength = current_reading
             return
         #print("magnet_strenght:", self.manget_strenght)
         #print("current reading",current_reading)
-        self.manget_strenght = (self.manget_strenght + current_reading) // 2
+        self.manget_strength = (self.manget_strength + current_reading) // 2
 
     def is_magnet_detected(self):
         current_reading = self.hall.read()

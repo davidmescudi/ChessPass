@@ -236,12 +236,24 @@ class DISPLAY_FRAMEBUF(DISPLAY):
 
     def showText(self, message):
         self.fbuf.fill(0)
-        self.text(message, 0, 20, 1)
+        self.text(message, 20, 20, 1)
         self.show()
+        self.lastDisplayedText = message
 
+    def showThreeLinesOfText(self, firstLine, secondLine, thirdLine):
+        if firstLine+secondLine+thirdLine == self.lastDisplayedText:
+            return
+        else:
+            self.fbuf.fill(0)
+            self.text(firstLine, 0, 10, 1)
+            self.text(secondLine, 0, 20, 1)
+            self.text(thirdLine, 0, 30, 1)
+            self.show()
+            self.lastDisplayedText = firstLine + secondLine + thirdLine
+    
     def showSecret(self, secret):
         self.fbuf.fill(0)
-        self.text(secret, 20, 20, 1)
+        #self.text(secret, 20, 20, 1)
         self.show()
 
     def blit(self, fbuf, position_x, position_y, rotation=0):

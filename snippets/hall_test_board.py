@@ -11,7 +11,7 @@ pins = [36, 39, 34, 35, 32, 33, 25, 26, 27]
 #for adc in ADCs:
  #   adc.atten(ADC.ATTN_11DB)
 
-pin = pins[0]
+pin = pins[3]
 hall = ADC(Pin(pin, Pin.IN))
 hall.atten(ADC.ATTN_11DB)
 #dig = Pin(6, Pin.IN)
