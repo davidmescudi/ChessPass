@@ -181,6 +181,7 @@ class DISPLAY_FRAMEBUF(DISPLAY):
         )
         self.buf = bytearray((HEIGHT // 8) * WIDTH)
         self.fbuf = framebuf.FrameBuffer(self.buf, WIDTH, HEIGHT, framebuf.MONO_VLSB)
+        self.lastDisplayedText = ""
 
     def fill(self, col):
         self.fbuf.fill(col)
@@ -211,18 +212,27 @@ class DISPLAY_FRAMEBUF(DISPLAY):
         self.fbuf.fill_rect(x, y, w, h, col)
 
     def showLogo(self):
-        self.fbuf.fill(0)
-        logo_buf = framebuf.FrameBuffer(
-            CHESS_PASS_LOGO, WIDTH, HEIGHT, framebuf.MONO_HLSB
-        )
-        self.blit(logo_buf, 0, 0, 0)
-        self.clear()
-        self.data(self.buf)
+        if self.lastDisplayedText == "logo":
+            return
+        else:
+            self.fbuf.fill(0)
+            logo_buf = framebuf.FrameBuffer(
+                CHESS_PASS_LOGO, WIDTH, HEIGHT, framebuf.MONO_HLSB
+            )
+            self.blit(logo_buf, 0, 0, 0)
+            self.clear()
+            self.data(self.buf)
+            self.lastDisplayedText = "logo"
 
     def showActiveFigures(self, activeFigures, required_shares):
-        self.fbuf.fill(0)
-        self.text(f"{activeFigures} / {required_shares}", 20, 20, 1)
-        self.show()
+        displayedText = f"{activeFigures} / {required_shares}"
+        if displayedText == self.lastDisplayedText:
+            return
+        else:
+            self.fbuf.fill(0)
+            self.text(displayedText, 20, 20, 1)
+            self.show()
+            self.lastDisplayedText = displayedText
 
     def showSecret(self, secret):
         self.fbuf.fill(0)
