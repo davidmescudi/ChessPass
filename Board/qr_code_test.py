@@ -16,8 +16,8 @@ matrix = qr.get_matrix()
 print(matrix)
 
 display.power_on()
-for y in range(len(matrix)*2): # Scaling the bitmap by 2
-    for x in range(len(matrix[0])*2): # because my screen is tiny.
-        value = not matrix[int(y/2)][int(x/2)] # Inverting the values because
+for y in range(len(matrix)): # Scaling the bitmap by 2
+    for x in range(len(matrix[0])): # because my screen is tiny.
+        value = not matrix[int(y)][int(x)] # Inverting the values because
         display.pixel(x,y,value) # black is `True` in the matrix.
 display.show()
