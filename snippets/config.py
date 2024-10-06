@@ -23,7 +23,6 @@ INIT_DUTY = 1023
 
 LED_PIN = 10
 LED_OFF_DURATION = 200 # miliseconds off when magnet strenght switchted
-### TODO Use pwm for led to set 3 states depending on 3 magnet strenght LOW -> MIDDLE -> HIGH
 
 ROT_DEBOUNCE_TIME = 10  # Minimum time (ms) between encoder events
 

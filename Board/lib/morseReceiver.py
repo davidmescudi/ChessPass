@@ -49,6 +49,9 @@ class MorseReceiver:
 
     def update_current_time(self):
         self.current_time = ticks_ms()
+        
+    def get_magnet_strength(self):
+        return self.hall_sensor.manget_strength
 
     def handle_signal_on(self):
         if not self.is_receiving:
@@ -118,7 +121,7 @@ class MorseReceiver:
                 self.is_saving = True
                 message = self.received_word
                 self.received_word = ""
-                return message
+                return message, self.get_magnet_strength()
 
     def decode_letter(self):
         """Decodes the current symbol sequence into a letter."""

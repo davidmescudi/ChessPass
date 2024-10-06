@@ -1,12 +1,3 @@
-def bit_length(value):
-    if value == 0:
-        return 0  # The bit length of 0 is 0
-    length = 0
-    while value:
-        value >>= 1  # Right shift the value by 1
-        length += 1
-    return length
-
 def required_bytes_given_bitlength(bits):
     if not isinstance(bits, int):
         raise TypeError("bitlength must be an int")
@@ -19,28 +10,19 @@ def required_bytes_given_value(value):
         raise TypeError("value must be an int")
     if value < 0:
         raise ValueError("value must be nonnegative")
-    return required_bytes_given_bitlength(bit_length(value))
+    return required_bytes_given_bitlength(int.bit_length(value))
 
 def int_from_bytes(b):
     if not isinstance(b, bytes):
         raise TypeError("expected a sequence of bytes")
-    return int.from_bytes(b,'big')
+    return int.from_bytes(b, byteorder='big', signed=False)
 
 def int_to_bytes(value):
     if not isinstance(value, int):
         raise TypeError("value must be an int")
     if value < 0:
         raise ValueError("value must be nonnegative")
-    
-    length = required_bytes_given_value(value)  # Calculate the required number of bytes
-    byte_array = bytearray(length)
-
-    for i in range(length):
-        byte_array[length - 1 - i] = value & 0xff  # Get the least significant byte
-        value >>= 8  # Shift right by 8 bits to get the next byte
-
-    return bytes(byte_array)  # Convert bytearray to bytes before returning
-
+    return value.to_bytes(length=required_bytes_given_value(value), byteorder='big', signed=False)
 
 def select_prime_larger_than(value):
     if not isinstance(value, int):

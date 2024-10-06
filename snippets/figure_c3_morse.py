@@ -217,7 +217,6 @@ def handle_shutdown():
         log("Current time set", encoder_max_level_time)
     elif encoder_level == 4 and ticks_diff(current_time, encoder_max_level_time) >= 10000:
         log("Entering deep sleep")
-        # TODO: deactivate all components e.g. led.deinit()
         encoder_max_level_time = None
     elif encoder_level < 4:
         encoder_max_level_time = None
