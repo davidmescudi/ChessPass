@@ -1,6 +1,6 @@
 # BOX
 HALL_VARIANCE_THRESHOLD = 70
-MORSE_VARIANCE = 5  # handle and mitigate desyncronistaion between box and piece
+MORSE_VARIANCE = 20  # handle and mitigate desyncronistaion between box and piece
 ADCS = [36, 39, 34, 35, 32, 33, 25, 26, 27]
 
 # PIECE
@@ -63,11 +63,11 @@ MORSE_CODE = {
     "7": "--...",
     "8": "---..",
     "9": "----.",
-    "0": "-----",
+    "0": "--.--",
     "-": "-....-",
 }
 
-DOT_TIME = 100
+DOT_TIME = 70
 DASH_TIME = 3 * DOT_TIME
 SYMBOL_PAUSE_TIME = DOT_TIME
 LETTER_PAUSE_TIME = 3 * DOT_TIME

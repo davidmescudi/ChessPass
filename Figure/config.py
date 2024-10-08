@@ -63,11 +63,11 @@ MORSE_CODE = {
     "7": "--...",
     "8": "---..",
     "9": "----.",
-    "0": "-----",
+    "0": "--.--",
     "-": "-....-",
 }
 
-DOT_TIME = 100
+DOT_TIME = 70
 DASH_TIME = 3 * DOT_TIME
 SYMBOL_PAUSE_TIME = DOT_TIME
 LETTER_PAUSE_TIME = 3 * DOT_TIME
