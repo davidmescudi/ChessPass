@@ -173,11 +173,11 @@ class DISPLAY:
 
 
 class DISPLAY_FRAMEBUF(DISPLAY):
-    def __init__(self, spi, cs, dc, bl, rst=None):
+    def __init__(self, spi, cs, dc, bl, rst=None, backlight=False):
         initialised_spi = SPI(spi)
         initialised_spi.init(baudrate=2000000, polarity=0, phase=0)
         super().__init__(
-            initialised_spi, Pin(cs), Pin(dc), Pin(bl, Pin.OUT, value=0), Pin(rst)
+            initialised_spi, Pin(cs), Pin(dc), Pin(bl, Pin.OUT, value=int(backlight)), Pin(rst)
         )
         self.buf = bytearray((HEIGHT // 8) * WIDTH)
         self.fbuf = framebuf.FrameBuffer(self.buf, WIDTH, HEIGHT, framebuf.MONO_VLSB)
@@ -188,28 +188,19 @@ class DISPLAY_FRAMEBUF(DISPLAY):
 
     def pixel(self, x, y, col):
         self.fbuf.pixel(x, y, col)
+        
+    def display_bitmap(self, matrix, x_offset, scaling):
+        self.clear()
+        self.fbuf.fill(0)
+        for y in range(len(matrix)*scaling): # Scaling the bitmap by 2
+            for x in range(len(matrix[0])*scaling): # because my screen is tiny.
+                value = not matrix[int(y/scaling)][int(x/scaling)] # Inverting the values because
+                self.pixel(x+x_offset,y,value) # black is `True` in the matrix.
+        self.show()
 
-    def scroll(self, dx, dy):
-        self.fbuf.scroll(dx, dy)
-        # software scroll
 
     def text(self, string, x, y, col):
         self.fbuf.text(string, x, y, col)
-
-    def line(self, x1, y1, x2, y2, col):
-        self.fbuf.line(x1, y1, x2, y2, col)
-
-    def hline(self, x, y, w, col):
-        self.fbuf.hline(x, y, w, col)
-
-    def vline(self, x, y, h, col):
-        self.fbuf.vline(x, y, h, col)
-
-    def rect(self, x, y, w, h, col):
-        self.fbuf.rect(x, y, w, h, col)
-
-    def fill_rect(self, x, y, w, h, col):
-        self.fbuf.fill_rect(x, y, w, h, col)
 
     def showLogo(self):
         if self.lastDisplayedText == "logo":
@@ -234,9 +225,9 @@ class DISPLAY_FRAMEBUF(DISPLAY):
             self.show()
             self.lastDisplayedText = displayedText
 
-    def showText(self, message):
+    def showText(self, message, x=20, y=20):
         self.fbuf.fill(0)
-        self.text(message, 20, 20, 1)
+        self.text(message, x, y, 1)
         self.show()
         self.lastDisplayedText = message
 
@@ -250,11 +241,6 @@ class DISPLAY_FRAMEBUF(DISPLAY):
             self.text(thirdLine, 0, 30, 1)
             self.show()
             self.lastDisplayedText = firstLine + secondLine + thirdLine
-    
-    def showSecret(self, secret):
-        self.fbuf.fill(0)
-        self.text(secret, 20, 20, 1)
-        self.show()
 
     def blit(self, fbuf, position_x, position_y, rotation=0):
         self.fbuf.blit(fbuf, position_x, position_y, rotation)

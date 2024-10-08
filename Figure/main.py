@@ -1,6 +1,7 @@
-from machine import Pin, ADC, PWM, freq
+from machine import Pin, PWM, freq
 from time import ticks_ms, ticks_diff, sleep_ms
 from boot import secret_share
+from lib import RotaryIRQ
 # Load right pins because we used two different esp32 namley s3 (240 MHz) and c3(160 MHz) that differ in pins
 if freq() == 240000000:
     from config import PINS_S3 as PINS
@@ -27,15 +28,25 @@ from config import (
     MAGNET_MAX_DUTY,
     TRANSMIT_MAGNET_STRENGTH_TIME
 )
-VERBOSE = True
+VERBOSE = False
 
 # Setup pins for LED, PWM, encoder (clk, dt)
 led = PWM(Pin(PINS["LED"], Pin.OUT))
 magnet = PWM(Pin(PINS["MAGNET"]), freq=MAGNET_FREQ)
 magnet.duty(0)
 
-clk = Pin(PINS["CLK"], Pin.IN, Pin.PULL_UP)
-dt = Pin(PINS["DT"], Pin.IN, Pin.PULL_UP)
+
+rotary = RotaryIRQ(
+    pin_num_clk=PINS["CLK"],
+    pin_num_dt=PINS["DT"],
+    min_val=ENCODER_MIN_LEVEL,
+    max_val=ENCODER_MAX_LEVEL,
+    incr=1,
+    range_mode=RotaryIRQ.RANGE_BOUNDED,
+    pull_up=True,
+    reverse=True
+)
+
 
 # Initial duty cycle
 magnet_duty = INIT_DUTY  # (0 to 1023) magnet strenght for morsing
@@ -55,7 +66,7 @@ morse_state = {
 
 # Variables for encoder state, LED control, and debouncing
 is_shutdown = False
-last_clk = clk.value()
+last_clk = None
 last_encoder_event_time = 0  # For debouncing
 debounce_time = ROT_DEBOUNCE_TIME  # Minimum time (ms) between encoder events
 encoder_level = ENCODER_LEVEL
@@ -67,43 +78,29 @@ def log(*values):
     if VERBOSE:
         print(*values)
 
-
+    
 # Encoder interrupt handler
-def encoder_callback(pin):
-    global magnet_duty, last_clk, last_encoder_event_time, encoder_level, encoder_max_level_time, is_shutdown
+def encoder_callback():
+    global magnet_duty, encoder_level, is_shutdown, rotary
 
     # reactivate if is shutdowned
     is_shutdown = False
-    # Debouncing: ignore events that happen too quickly
-    current_time = ticks_ms()
-    if ticks_diff(current_time, last_encoder_event_time) < debounce_time:
-        return
 
-    current_clk = clk.value()
-
-    if current_clk == 1 and last_clk == 0:
-        # Adjust PWM duty cycle based on encoder direction
-        if dt.value() == 0:  # Clockwise rotation
-            encoder_level = min(ENCODER_MAX_LEVEL, encoder_level + 1)
-        else:  # Counter-clockwise rotation
-            encoder_level = max(ENCODER_MIN_LEVEL, encoder_level - 1)
-            
-        # Limit duty cycle between 0 and 1023
-        magnet_duty = MAGNET_DUTY_MAPPING[encoder_level]#
-        magnet.duty(magnet_duty)
-        # pwm.duty(duty)
-        log("Duty cycle:", magnet_duty)
-        log("Encoder Level:", encoder_level)
-        # Restart Morse code transmission
-        if (encoder_level < 4 and morse_state["is_transmitting"]):
-            morse_state["is_transmitting"] = False
-    # Update the last state and time
-    last_clk = current_clk
-    last_encoder_event_time = current_time
+    rotary_value = rotary.value()
+    encoder_level = rotary_value
+        
+    # Limit duty cycle between 0 and 1023
+    magnet_duty = MAGNET_DUTY_MAPPING[encoder_level]#
+    magnet.duty(magnet_duty)
+    # pwm.duty(duty)
+    log("Duty cycle:", magnet_duty)
+    log("Encoder Level:", encoder_level)
+    # Restart Morse code transmission
+    if (encoder_level < 4 and morse_state["is_transmitting"]):
+        morse_state["is_transmitting"] = False
 
 
-# Set up an interrupt on the `clk` pin for both rising and falling edges
-clk.irq(trigger=Pin.IRQ_RISING | Pin.IRQ_FALLING, handler=encoder_callback)
+rotary.add_listener(encoder_callback)
 
 
 # Function to handle LED reactivation after brief off time
@@ -144,13 +141,6 @@ def handle_shutdown():
         if encoder_max_level_time is None:
             encoder_max_level_time = current_time
             log("Current time set", encoder_max_level_time)
-        #elif ticks_diff(current_time, encoder_max_level_time) >= SHUTDOWN_TIME:
-            #log("Shutdown")
-            #is_shutdown = True
-            #led.duty(0)
-            #magnet.duty(0)
-            #clk.off()
-            #dt.off()
     else:
         encoder_max_level_time = None
 
