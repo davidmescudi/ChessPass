@@ -67,6 +67,7 @@ class MorseReceiver:
 
         self.is_receiving = False
         self.signal_duration = ticks_diff(self.current_time, self.last_signal_time)
+        self.log("signal_duration:", self.signal_duration)
 
         if self.is_dot_or_dash():
             self.last_pause_time = self.current_time
@@ -75,7 +76,10 @@ class MorseReceiver:
 
     def check_pause_duration(self):
         pause_duration = ticks_diff(self.current_time, self.last_pause_time)
-        if pause_duration >= self.end_message_pause_time - self.morse_variance:
+        if pause_duration % 20 == 0:
+            self.log("pause_duration:", pause_duration)
+            
+        if pause_duration >= self.end_message_pause_time - self.morse_variance * 2:
             self.last_pause_time = None
             self.is_saving = True
             self.log("--- Start saving ---")
@@ -94,27 +98,28 @@ class MorseReceiver:
 
     def decode_symbol(self):
         self.signal_duration = ticks_diff(self.current_time, self.last_signal_time)
-
+        self.log("signal duration:", self.signal_duration)
         if self.signal_duration >= self.dash_time - self.morse_variance:
             return "-", self.signal_duration - (self.dash_time - self.morse_variance)
-        elif self.signal_duration >= self.dot_time - self.morse_variance:
-            return ".", self.signal_duration - (self.dot_time - self.morse_variance)
-        return "", 0
+    
+        return ".", self.signal_duration - (self.dot_time - self.morse_variance)
 
     def check_for_letter_or_message_end(self):
         pause_duration = ticks_diff(self.current_time, self.last_pause_time)
-
+        if pause_duration % 50 == 0:
+            self.log("pause_duration:", pause_duration)
         # End of a letter
         if (
-            pause_duration >= self.letter_pause_time - self.morse_variance
+            pause_duration >= self.letter_pause_time - self.morse_variance * 1.5
             and self.current_symbols
         ):
+            self.log("End of letter")
             self.decode_letter()
 
         # End of the message
         if pause_duration >= self.end_message_pause_time - self.morse_variance:
             self.last_pause_time = None
-
+            
             if self.is_saving:
                 self.log(f"End of first word received: {self.received_word}")
                 self.message_received = True
@@ -122,6 +127,7 @@ class MorseReceiver:
                 message = self.received_word
                 self.received_word = ""
                 return message, self.get_magnet_strength()
+            self.log("End of message, but not saving")
 
     def decode_letter(self):
         """Decodes the current symbol sequence into a letter."""
@@ -151,9 +157,8 @@ class MorseReceiver:
                 # The signal just stopped, so process the duration of the signal
                 symbol, deviation = self.decode_symbol()
 
-                if symbol:
-                    self.current_symbols += symbol
-                    self.log(f"Detected symbol: {symbol}")
+                self.current_symbols += symbol
+                self.log(f"Detected symbol: {symbol}")
 
                 # Reset receiving state after processing the symbol
                 self.is_receiving = False
