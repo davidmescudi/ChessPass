@@ -22,6 +22,7 @@ class HallSensor:
         self.manget_strength = 0
         self.initialised_time = None
         self.detected_history_avg = 0
+        self.magnet_readings = []
     
     def log(self, *values):
         if self.verbose: print(*values)
@@ -41,29 +42,27 @@ class HallSensor:
         self.baseline = readings_avg
         self.log(f"Sensor initialized with baseline: {self.baseline}")
     
+    def calculate_avg_magnet_strength(self):
+        if len(self.magnet_readings):
+            self.manget_strength = sum(self.magnet_readings) //len(self.magnet_readings)
+        else:
+            self.manget_strength = self.read_value()
+    
     def is_magnet_active_detected(self):
         #true_detected = sum(self.detected_history)
 
         return self.detected_history_avg#(true_detected / len(self.detected_history)) #>= self.figure_detection_threshold
-        
-    def average_magnet_strength(self, hall_value):
-        if self.manget_strength == 0:
-            self.manget_strength = hall_value
-            return
-        
-        self.manget_strength = (self.manget_strength + hall_value) // 2
     
     def reset_magnet_strength(self):
         self.manget_strength = 0
     
     def measure_magnet_strength(self):
         current_reading = self.read_value()
-        if self.manget_strength == 0:
-            self.manget_strength = current_reading
+        if len(self.magnet_readings) < 250:
+            self.magnet_readings.append(current_reading)
             return
-        #print("magnet_strenght:", self.manget_strenght)
-        #print("current reading",current_reading)
-        self.manget_strength = (self.manget_strength + current_reading) // 2
+        
+        self.magnet_readings = self.magnet_readings[1:] + [current_reading]
 
     def is_magnet_detected(self):
         current_reading = self.hall.read()
@@ -75,12 +74,5 @@ class HallSensor:
 
         if self.initialised_time:
             self.detected_history_avg = (self.detected_history_avg + int(isDetected)) / 2
-            #if ticks_diff(current_time, self.initialised_time) >= self.figure_detection_time:
-                # self.detected_history.append(isDetected)
-                # self.detected_history.pop(0)
-            # else:
-            #     self.detected_history.append(isDetected)
-
-        # Return True if deviation exceeds the threshold (magnet detected)
         return isDetected
     

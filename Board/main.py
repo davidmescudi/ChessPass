@@ -18,6 +18,7 @@ from lib.config import (
     END_MESSAGE_PAUSE_TIME,
     FIGURE_DETECTION_TIME,
     FIGURE_DETECTION_THRESHOLD,
+    MAGNET_STRENGTH_MAPPING
 )
 
 def shift_hex_string(s, shift, decrypt=False):
@@ -66,12 +67,13 @@ enough_messages = False
 left_btn = Pin(22, Pin.IN, Pin.PULL_UP)
 right_btn = Pin(23, Pin.IN, Pin.PULL_UP)
 
-def transform_magnet_strength(strength):
-    if strength <= 2705:
+def transform_magnet_strength(position, strength):
+    max_magnet_strength, min_magnet_strength = MAGNET_STRENGTH_MAPPING[position]
+    if strength <= max_magnet_strength:
         return 3
-    elif 2700 < strength < 2780:
+    elif max_magnet_strength < strength < min_magnet_strength:
         return 2
-    elif strength >= 2780:
+    elif strength >= min_magnet_strength:
         return 1
 
 def handle_messages(messages):
@@ -100,7 +102,7 @@ def handle_secret_display(messages):
     
     try:
         for idx, msg, str_magnet in messages:
-            shifted_messages.append(shift_hex_string(msg, transform_magnet_strength(str_magnet) * possible_positions[idx], decrypt=True))
+            shifted_messages.append(shift_hex_string(msg, transform_magnet_strength(idx ,str_magnet) * possible_positions[idx], decrypt=True))
         
         
         result = shamir.recover_secret(shamir.from_hex(decrypt_secret(shifted_messages))).decode('ascii')
@@ -117,15 +119,15 @@ def handle_secret_display(messages):
     secret_matrix = qr.get_matrix()
     display.showText("Correct shares!")
     time.sleep(3)
-    display.showThreeLinesOfText("Your secret", "is...")
+    display.showThreeLinesOfText("Your secret", "is...", "........")
     time.sleep(3)
     display.display_bitmap(secret_matrix, x_offset, scaling)
     is_secret_shown = True
 
 def main_loop():
     global is_receiving_piece_config_mode, last_pressed_time, debounce_time, enough_messages, is_error_shown, is_secret_shown
-    hall_sensors = []
-    morse_receivers = []
+    hall_sensors: list[HallSensor] = []
+    morse_receivers: list[MorseReceiver] = []
     # Initialize hall sensors and Morse receivers
     for pin_num in ADCS:
         hall_sensor = HallSensor(
@@ -154,6 +156,8 @@ def main_loop():
     for morse_receiver in morse_receivers:
         morse_receiver.init()
 
+    display.showThreeLinesOfText("Put pieces", "in config", "mode")
+    time.sleep(5)
     messages = []
     while True:
         active_figures = 0
@@ -176,6 +180,8 @@ def main_loop():
             print("left button pressed")
             last_pressed_time = time.ticks_ms()
             if not is_receiving_piece_config_mode:
+                display.showThreeLinesOfText("Put pieces", "in config", "mode")
+                time.sleep(5)
                 is_error_shown = False
                 is_secret_shown = False
                 [hall_sensor.reset_magnet_strength() for hall_sensor in hall_sensors]
@@ -183,8 +189,6 @@ def main_loop():
                 
 
         if is_receiving_piece_config_mode:
-            display.showThreeLinesOfText("Put pieces", "in config", "mode")
-            time.sleep(5)
             for morse_receiver in morse_receivers:
                 morse_receiver.hall_sensor.measure_magnet_strength()
                 morse_receiver.hall_sensor.is_magnet_detected()
@@ -200,7 +204,7 @@ def main_loop():
                     messages.append((index, message, magnet_strength))
                     print(messages)  # Debugging output
                     unique_positions = {position for position,_,_ in messages}
-                    if True or (len(unique_positions) >= required_shares and len(messages) >= required_shares * 3):
+                    if len(unique_positions) >= required_shares and len(messages) >= required_shares * 3:
                         morse_receiver.reset()
                         enough_messages = True
                         split_by_index = handle_messages(messages)
@@ -215,3 +219,4 @@ def main_loop():
 
 # Uncomment to run the main loop
 main_loop()
+

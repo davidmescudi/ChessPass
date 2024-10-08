@@ -51,6 +51,7 @@ class MorseReceiver:
         self.current_time = ticks_ms()
         
     def get_magnet_strength(self):
+        self.hall_sensor.calculate_avg_magnet_strength()
         return self.hall_sensor.manget_strength
 
     def handle_signal_on(self):

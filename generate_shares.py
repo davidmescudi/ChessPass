@@ -4,12 +4,12 @@ possible_positions = [1,4,5,7,8,9,10,11,13]
 
 ########################### Change these to your liking ###########################
 
-secret = "Paul und David"
+secret = "https://is.gd/u1TXB0"
 how_many_figures = 3
 # ["A1","A2","A3","B1","B2","B3","C1","C2","C3"] starting from 0 (A1) to 8(C3)
-positions = [possible_positions[0], possible_positions[4], possible_positions[8]]
+positions = [possible_positions[8], possible_positions[4], possible_positions[0]]
 # simply a integer from 1,2,3 represents how strong the magnet needs to be
-magnet_strengths = [2,1,3]
+magnet_strengths = [2,3,1]
 how_many_figures_required_to_reveal_secret = 2
 
 ########################### Below no changes are required ###########################

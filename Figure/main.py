@@ -28,7 +28,7 @@ from config import (
     MAGNET_MAX_DUTY,
     TRANSMIT_MAGNET_STRENGTH_TIME
 )
-VERBOSE = True
+VERBOSE = False
 
 # Setup pins for LED, PWM, encoder (clk, dt)
 led = PWM(Pin(PINS["LED"], Pin.OUT))
