@@ -1,3 +1,4 @@
+# github.com/JASchilz/uQR
 from lib.uQR import QRCode
 from lib.config import DISPLAY_PINS
 from lib import DISPLAY_FRAMEBUF
